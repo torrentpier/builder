@@ -1,0 +1,30 @@
+#!/usr/bin/env php
+<?php
+
+define('ROOT_PATH', dirname(__DIR__));
+
+require_once ROOT_PATH . '/vendor/autoload.php';
+require_once ROOT_PATH . '/src/Command/BuildCommand.php';
+
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\HelpCommand;
+use TPBuilder\Command\BuildCommand;
+
+class TBBuildApplication extends Application
+{
+    public function __construct()
+    {
+        parent::__construct('Torrent Pier Builder', '1.0.0');
+        $this->setDefaultCommand('build');
+    }
+
+    protected function getDefaultCommands()
+    {
+        return [
+            new BuildCommand(),
+            new HelpCommand(),
+        ];
+    }
+}
+
+(new TBBuildApplication)->run();
