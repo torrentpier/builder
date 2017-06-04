@@ -1,0 +1,93 @@
+{
+  "project": {
+    "files": {
+      "execute": [
+        ".gitignore",
+        ".editorconfig",
+        ".styleci.yml",
+        "composer.json",
+        "composer.lock",
+        "CONTRIBUTING.md",
+        "crowdin.yml"
+      ]
+    }
+  },
+  "vendor": {
+    "bugsnag/bugsnag": {
+      "include": [
+        "src",
+        "LICENSE.txt"
+      ]
+    },
+    "composer/ca-bundle": {
+      "include": [
+        "res",
+        "src",
+        "LICENSE"
+      ]
+    },
+    "gigablah/sphinxphp": {
+      "include": [
+        "src"
+      ]
+    },
+    "google/recaptcha": {
+      "include": [
+        "src",
+        "LICENSE"
+      ]
+    },
+    "guzzlehttp/guzzle": {
+      "include": [
+        "src",
+        "LICENSE"
+      ]
+    },
+    "guzzlehttp/promises": {
+      "include": [
+        "src",
+        "LICENSE"
+      ]
+    },
+    "guzzlehttp/psr7": {
+      "include": [
+        "src",
+        "LICENSE"
+      ]
+    },
+    "longman/ip-tools": {
+      "include": [
+        "src",
+        "LICENSE.md"
+      ]
+    },
+    "psr/http-message": {
+      "include": [
+        "src",
+        "LICENSE"
+      ]
+    },
+    "rych/bencode": {
+      "include": [
+        "Rych/Bencode/Exception",
+        "Rych/Bencode/Bencode.php",
+        "Rych/Bencode/Decoder.php",
+        "Rych/Bencode/Encoder.php",
+        "Rych/Bencode/Exception.php"
+      ]
+    },
+    "samdark/sitemap": {
+      "include": [
+        "Index.php",
+        "Sitemap.php",
+        "LICENSE"
+      ]
+    },
+    "swiftmailer/swiftmailer": {
+      "include": [
+        "lib",
+        "LICENSE"
+      ]
+    }
+  }
+}

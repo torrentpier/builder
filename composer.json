@@ -1,0 +1,14 @@
+{
+    "name": "torrentpier/builder",
+    "description": "Building project the TorrentPier Tracker based on composer.",
+    "type": "project",
+    "license": "MIT",
+    "minimum-stability": "stable",
+    "require": {
+        "symfony/console": "3.3",
+        "symfony/filesystem": "3.3",
+        "symfony/process": "3.3",
+        "symfony/finder": "3.3",
+        "alchemy/zippy": "0.4.8"
+    }
+}
