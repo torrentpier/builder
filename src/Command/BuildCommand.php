@@ -6,6 +6,7 @@ use Alchemy\Zippy\Zippy;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\InvalidArgumentException;
 use Symfony\Component\Console\Exception\RuntimeException;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Filesystem\Filesystem;
@@ -24,6 +25,7 @@ class BuildCommand extends Command
         $this
             ->setName('build')
             ->setDescription('Build TorrentPier project base composer')
+            ->addArgument('tag', InputArgument::OPTIONAL, 'Set branch or tag', 'master')
         ;
     }
 
@@ -35,18 +37,20 @@ class BuildCommand extends Command
     {
         try {
             $cPath = $this->getComposerPharPath();
-            $wDir = $this->createDirectoryForProject();
+            $wDir = $this->createDirectoryForProject($input);
 
-            $this->createProject($output, $cPath, $wDir);
+            $this->createProject($output, $input, $cPath, $wDir);
             $this->optimizationAutoloader($output, $cPath, $wDir);
 
-            $this->clearVendorDirectory($output, $wDir);
-            $this->clearProjectDirectory($output, $wDir);
+            $this->clearVendorDirectory($output, $input, $wDir);
+            $this->clearProjectDirectory($output, $input, $wDir);
 
             chdir(ROOT_PATH . '/build');
 
+            $tag = $input->getArgument('tag');
+
             $zip = Zippy::load();
-            $zip->create(realpath('./') . '/build-master.zip', $wDir, true, 'zip');
+            $zip->create(realpath('./') . '/build-' . $tag . '.zip', $wDir, true, 'zip');
 
             $this->getFs()->remove($wDir);
 
@@ -59,14 +63,21 @@ class BuildCommand extends Command
     /**
      * Creates a working directory in which the project will be created and returned path to it.
      *
+     * @param InputInterface $input
      * @return string
-     * @throws RuntimeException
      */
-    protected function createDirectoryForProject()
+    protected function createDirectoryForProject(InputInterface $input)
     {
         try {
+            $tag = $input->getArgument('tag');
 
-            $directory = ROOT_PATH . '/build/master-' . date('Ymd-His');
+            if ($tag === 'master') {
+                $directory = ROOT_PATH . '/build/master-' . date('Ymd-His');
+            } else {
+                $directory = ROOT_PATH . '/build/' . $tag;
+            }
+
+
             $this->getFs()->mkdir($directory);
         } catch (\Exception $e) {
             throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
@@ -83,37 +94,39 @@ class BuildCommand extends Command
      */
     protected function getComposerPharPath()
     {
-        return ROOT_PATH . './composer.phar';
+        return ROOT_PATH . '/composer.phar';
     }
 
     /**
      * Create project.
      *
      * @param OutputInterface $output
+     * @param InputInterface  $input
      * @param string $composerPath
      * @param string $workDirectory
-     * @throws \Symfony\Component\Console\Exception\RuntimeException
      */
-    protected function createProject(OutputInterface $output, $composerPath, $workDirectory)
+    protected function createProject(OutputInterface $output, InputInterface $input, $composerPath, $workDirectory)
     {
-        $command = [
-            'php',
-            $composerPath,
-            'create-project',
-            '--stability="dev"',
-            '--prefer-source',
-            '--prefer-dist',
-            '--no-dev',
-            '--no-progress',
-            '--no-interaction',
-            '--profile',
-            '--keep-vcs',
-            'torrentpier/torrentpier',
-            $workDirectory,
-            'dev-master',
-        ];
-
         try {
+            $tag = $input->getArgument('tag');
+
+            $command = [
+                'php',
+                $composerPath,
+                'create-project',
+                '--stability="dev"',
+                '--prefer-source',
+                '--prefer-dist',
+                '--no-dev',
+                '--no-progress',
+                '--no-interaction',
+                '--profile',
+                '--keep-vcs',
+                'torrentpier/torrentpier',
+                $workDirectory,
+                $tag === 'master' ? 'dev-master' : $tag,
+            ];
+
             $process = new Process(implode(' ', $command), $workDirectory);
             $process->setTimeout(600);
             $this->getHelper('process')->mustRun($output, $process);
@@ -155,15 +168,15 @@ class BuildCommand extends Command
      * Clean up the project directory.
      *
      * @param OutputInterface $output
+     * @param InputInterface  $input
      * @param string          $workDirectory
-     * @throws RuntimeException
      */
-    protected function clearProjectDirectory(OutputInterface $output, $workDirectory)
+    protected function clearProjectDirectory(OutputInterface $output, InputInterface $input, $workDirectory)
     {
         try {
             $output->writeln('Beginning clean up the project directory.');
 
-            foreach ((array)$this->getRuleData()['project'] as $rules) {
+            foreach ((array)$this->getRuleData($input)['project'] as $rules) {
                 $finder = $files = Finder::create()
                     ->in($workDirectory)
                     ->ignoreDotFiles(false);
@@ -196,12 +209,12 @@ class BuildCommand extends Command
      * @param string          $workDirectory
      * @throws RuntimeException
      */
-    protected function clearVendorDirectory(OutputInterface $output, $workDirectory)
+    protected function clearVendorDirectory(OutputInterface $output, InputInterface $input, $workDirectory)
     {
         try {
             $output->writeln('Beginning clean up the vendor directory.');
 
-            foreach ((array)$this->getRuleData()['vendor'] as $package => $rules) {
+            foreach ((array)$this->getRuleData($input)['vendor'] as $package => $rules) {
                 $finder = $files = Finder::create()
                     ->in($workDirectory . '/vendor/' . $package)
                     ->ignoreDotFiles(false);
@@ -258,14 +271,29 @@ class BuildCommand extends Command
     }
 
     /**
+     * @param InputInterface $input
      * @return array
      */
-    protected function getRuleData()
+    protected function getRuleData(InputInterface $input)
     {
         static $rules;
 
         if (!$rules) {
-            $rules = json_decode(file_get_contents(ROOT_PATH . '/resources/rule.master.json'), true);
+
+            $tag = $input->getArgument('tag');
+            $fileRule = '';
+            if ($tag !== 'master') {
+                $fileRule = ROOT_PATH . '/resources/rule.' . $tag . '.json';
+                if (!file_exists($fileRule)) {
+                    $fileRule = '';
+                }
+            }
+
+            if (!$fileRule) {
+                $fileRule = ROOT_PATH . '/resources/rule.master.json';
+            }
+
+            $rules = json_decode(file_get_contents($fileRule), true);
         }
 
         return $rules;
