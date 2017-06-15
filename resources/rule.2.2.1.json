@@ -8,6 +8,7 @@
         ".styleci.yml",
         "composer.json",
         "composer.lock",
+        "CODE_OF_CONDUCT.md",
         "CONTRIBUTING.md",
         "crowdin.yml"
       ]
